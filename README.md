@@ -11,3 +11,10 @@
 <sup>2</sup>[Schlumberger Research, Cambridge, Massachusetts](https://www.slb.com/about/who-we-are/our-technology-development)
 
 CVPR 2025
+
+</div>
+
+## 🚀 Overview
+<div align="center">
+<img width="800" alt="image" src="figs/framework.png">
+</div>

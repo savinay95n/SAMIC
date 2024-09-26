@@ -1,2 +1,3 @@
-# SAMIC
-Segment Anything with In-Context Spatial Prompt Engineering
+# SAMIC: Segment Anything with In-Context Spatial Prompt Engineering
+---
+

@@ -16,5 +16,5 @@ CVPR 2025
 
 ## 🚀 Overview
 <div align="center">
-<img width="800" alt="image" src="figs/overview.pdf">
+<img width="800" alt="image" src="figs/overview.png">
 </div>

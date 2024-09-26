@@ -25,7 +25,7 @@ pre-training, designed to predict valid masks from spatial
 prompts (e.g., pixel coordinates). With well-engineered
 prompts, SAM transfers zero-shot to diverse downstream
 tasks, often outperforming fully-supervised models. We
-propose SAMIC, an in-context automated prompt engi-
+propose **SAMIC**, an in-context automated prompt engi-
 neering method that generates task-specific spatial prompts
 by learning fine-grained correspondences between a tar-
 get image and a few labeled ”in-context” samples. Re-

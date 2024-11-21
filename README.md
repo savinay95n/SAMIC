@@ -10,7 +10,7 @@
 <sup>1</sup>[Pennsylvania State University, University Park, Pennsylvania](https://www.eecs.psu.edu/), &nbsp;
 <sup>2</sup>[Schlumberger Research, Cambridge, Massachusetts](https://www.slb.com/about/who-we-are/our-technology-development)
 
-CVPR 2025
+
 
 </div>
 

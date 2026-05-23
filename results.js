@@ -28,10 +28,13 @@
 
   const dots = Array.from(dotsContainer.querySelectorAll('.flashcard-dot'));
 
-  function pauseVideos(exceptIndex) {
+  function syncVideos(activeIndex) {
     cards.forEach(function (card, i) {
       const video = card.querySelector('video');
-      if (video && i !== exceptIndex) {
+      if (!video) return;
+      if (i === activeIndex) {
+        video.play().catch(function () {});
+      } else {
         video.pause();
       }
     });
@@ -58,7 +61,7 @@
       dot.setAttribute('aria-selected', i === current ? 'true' : 'false');
     });
 
-    pauseVideos(current);
+    syncVideos(current);
   }
 
   function goTo(index, direction) {

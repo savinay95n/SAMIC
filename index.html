@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="SamIC: Segment Anything with In-Context Spatial Prompt Engineering — a lightweight framework for few-shot segmentation, paired with the SamBox annotation tool.">
+  <title>SamIC — Segment Anything with In-Context Spatial Prompt Engineering</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="container header-inner">
+      <a class="brand" href="#">SamIC</a>
+      <nav class="nav">
+        <a href="#introduction">Introduction</a>
+        <a href="#samic">SamIC</a>
+        <a href="#sambox">SamBox</a>
+        <a href="#videos">Videos</a>
+        <a href="#results">Results</a>
+        <a href="#citation">Citation</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div class="container hero-inner">
+        <p class="eyebrow">Research Project</p>
+        <h1>SamIC: Segment Anything with In-Context Spatial Prompt Engineering</h1>
+        <p class="authors">
+          Savinay Nagendra<sup>1,2</sup>,
+          Kashif Rashid<sup>2</sup>,
+          Chaopeng Shen<sup>3</sup>,
+          Daniel Kifer<sup>1</sup>
+        </p>
+        <p class="affiliations">
+          <sup>1</sup>Department of Computer Science and Engineering, The Pennsylvania State University<br>
+          <sup>2</sup>Schlumberger-Doll Research, Cambridge, Massachusetts<br>
+          <sup>3</sup>Department of Civil and Environmental Engineering, The Pennsylvania State University
+        </p>
+
+        <div class="hero-actions">
+          <a class="btn btn-primary" href="https://arxiv.org/pdf/2412.11998" target="_blank" rel="noopener noreferrer">Paper (PDF)</a>
+          <a class="btn btn-secondary" href="https://arxiv.org/abs/2412.11998" target="_blank" rel="noopener noreferrer">arXiv</a>
+          <a class="btn btn-secondary" href="#sambox">SamBox Tool</a>
+        </div>
+
+        <p class="hero-summary">
+          A compact 2.6M-parameter network that learns to prompt the Segment Anything Model (SAM)
+          for few-shot segmentation — paired with SamBox, a custom annotation tool built from scratch
+          for rapid, high-quality training data collection.
+        </p>
+      </div>
+    </section>
+
+    <section class="section section-overview">
+      <div class="container">
+        <figure class="overview-figure">
+          <img src="assets/images/samic.png" alt="SamIC architecture overview: in-context spatial prompt engineering with SAM">
+          <figcaption>
+            SamIC learns task-specific spatial prompts from in-context reference images and feeds them
+            to SAM for segmentation across diverse downstream tasks.
+          </figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <section id="introduction" class="section">
+      <div class="container narrow">
+        <h2>The Problem</h2>
+        <p>
+          Semantic segmentation — identifying which pixels belong to specific objects in images and
+          videos — is fundamental to applications ranging from medical imaging to aerial remote
+          sensing. Yet it is impossible to build comprehensive, pixel-labeled datasets for every
+          object class we might encounter in the wild.
+        </p>
+        <p>
+          <strong>Few-shot segmentation</strong> addresses this gap: given only one or a handful of
+          labeled reference images for a new object class, a model should learn to segment that
+          class in unseen images. State-of-the-art approaches typically rely on large specialist
+          models (45M+ parameters) trained on massive datasets of unrelated objects, then adapted
+          to each new domain — a process that is expensive in compute, energy, and annotation effort.
+        </p>
+        <p>
+          Vision foundation models (VFMs) such as the <strong>Segment Anything Model (SAM)</strong>
+          offer a different path. SAM can produce high-quality masks when given spatial prompts
+          (points, boxes, or masks), but it is class-agnostic: it does not know <em>which</em>
+          objects you care about until you tell it. Prior training-free prompt-engineering methods
+          (e.g., PerSAM, Matcher) match embedding similarity between reference and target images,
+          but they are brittle — easily distracted by color, orientation, background clutter, and
+          multiple object instances.
+        </p>
+      </div>
+    </section>
+
+    <section id="samic" class="section section-alt">
+      <div class="container narrow">
+        <h2>What SamIC Solves</h2>
+        <p>
+          <strong>SamIC</strong> (Segment Anything with In-Context spatial prompt engineering) is a
+          lightweight network that learns <em>how to prompt SAM</em> for new segmentation tasks from
+          a small set of in-context examples. Instead of retraining a large segmentation backbone for
+          every new domain, SamIC treats segmentation as a prompt-engineering problem: it predicts
+          where to place spatial point prompts on a target image so that SAM produces the correct mask.
+        </p>
+
+        <div class="pipeline card">
+          <h3>How SamIC Works</h3>
+          <ol class="pipeline-steps">
+            <li>
+              <strong>In-context reference.</strong> The user provides one or more reference images
+              with spatial point prompts (collected via SamBox) indicating the objects of interest.
+            </li>
+            <li>
+              <strong>Heat map encoding.</strong> Point prompts are converted into saliency-like 2D
+              Gaussian heat maps that encode where the model should attend.
+            </li>
+            <li>
+              <strong>Cross-image correspondence.</strong> SamIC's Hypercorrelation Squeeze Network
+              (HSNet) backbone learns dense visual correspondences between the reference heat map and
+              a new target image.
+            </li>
+            <li>
+              <strong>Prompt extraction.</strong> A peak-detection algorithm extracts spatial point
+              prompts from the predicted heat map.
+            </li>
+            <li>
+              <strong>SAM segmentation.</strong> The extracted prompts are sent to SAM, which
+              produces the final segmentation mask — with no further human annotation required.
+            </li>
+          </ol>
+        </div>
+
+        <div class="stats-grid">
+          <div class="stat">
+            <span class="stat-value">2.6M</span>
+            <span class="stat-label">Learnable parameters</span>
+          </div>
+          <div class="stat">
+            <span class="stat-value">94%</span>
+            <span class="stat-label">Smaller than leading models</span>
+          </div>
+          <div class="stat">
+            <span class="stat-value">20%</span>
+            <span class="stat-label">Training data vs. benchmarks</span>
+          </div>
+          <div class="stat">
+            <span class="stat-value">SOTA</span>
+            <span class="stat-label">Competitive on 9 benchmarks</span>
+          </div>
+        </div>
+
+        <p>
+          At only 2.6 million parameters — roughly 1/20th the size of leading few-shot segmentation
+          models — SamIC trains in about 20 minutes on a single GPU and generalizes across diverse
+          tasks including one-shot segmentation, semantic segmentation, video object segmentation, and
+          domain-specific applications in aerial and medical imaging.
+        </p>
+        <p>
+          Crucially, SamIC does not require large labeled datasets. In our experiments, it performs
+          competitively using only <strong>20% of the training data</strong> provided by standard
+          one-shot benchmarks — and in practice, only a <strong>few labeled images</strong> per object
+          class are needed for SamIC to learn effective spatial prompts and generalize to new images.
+        </p>
+      </div>
+    </section>
+
+    <section id="sambox" class="section">
+      <div class="container narrow">
+        <h2>SamBox: Built from Scratch for SamIC</h2>
+        <p class="section-lead">
+          SamIC is only as good as the spatial prompts it learns from. SamBox is a custom annotation
+          tool we built entirely from scratch to collect high-quality, unambiguous point prompts at
+          scale — and it also works as a stand-alone segmentation annotation tool for any project.
+        </p>
+
+        <figure class="overview-figure">
+          <img src="assets/images/sambox.png" alt="SamBox annotation tool interface for collecting spatial point prompts">
+          <figcaption>
+            SamBox interfaces with SAM to collect unambiguous spatial point prompts through an
+            interactive, ambiguity-aware annotation workflow.
+          </figcaption>
+        </figure>
+
+        <h3>What SamBox Is</h3>
+        <p>
+          SamBox is an interactive, SAM-powered annotation tool designed and implemented from the
+          ground up for collecting spatial point prompts used to train SamIC. Unlike traditional
+          pixel-wise annotation tools (e.g., LabelMe), SamBox leverages SAM's mask decoder to produce
+          segmentations from sparse clicks — turning annotation from a tedious tracing task into a
+          rapid prompt-refinement workflow. Although built to support SamIC's training pipeline, SamBox
+          functions independently as a general-purpose segmentation annotation platform.
+        </p>
+
+        <h3>What SamBox Does</h3>
+        <ul class="feature-list">
+          <li>
+            <strong>Rapid mask generation.</strong> Users place point prompts or bounding boxes; SamBox
+            sends them to SAM and displays the resulting mask in real time.
+          </li>
+          <li>
+            <strong>Ambiguity-aware feedback.</strong> SAM returns an ambiguity-aware confidence score
+            alongside each mask. SamBox surfaces this score so annotators know when prompts are
+            unambiguous — critical for one-shot learning.
+          </li>
+          <li>
+            <strong>Multi-instance segmentation.</strong> When multiple disjoint objects appear in one
+            image, SamBox prompts each instance separately and unions the masks — avoiding SAM's
+            tendency to connect separate objects through shared background.
+          </li>
+          <li>
+            <strong>Stand-alone annotation tool.</strong> SamBox is not tied to SamIC — it exports
+            pixel-level masks and point prompts in standard formats, making it usable for any
+            segmentation annotation workflow.
+          </li>
+          <li>
+            <strong>Structured export.</strong> Collected point prompts are saved as JSON; pixel-level
+            masks are stored alongside for downstream training or evaluation.
+          </li>
+          <li>
+            <strong>Instance and semantic support.</strong> The tool scales to both instance-level and
+            semantic segmentation workflows across diverse domains.
+          </li>
+        </ul>
+
+        <h3>How SamBox Works</h3>
+        <div class="workflow card">
+          <div class="workflow-step">
+            <span class="step-number">1</span>
+            <div>
+              <h4>Pre-compute image embeddings</h4>
+              <p>
+                All images slated for annotation are run through SAM's image encoder once (~20 seconds
+                per image on an NVIDIA RTX 2080 Ti). Embeddings are cached to disk so subsequent
+                prompting is fast.
+              </p>
+            </div>
+          </div>
+          <div class="workflow-step">
+            <span class="step-number">2</span>
+            <div>
+              <h4>Interactive prompt refinement</h4>
+              <p>
+                The annotator places spatial point prompts on each object. SamBox queries SAM with
+                the cached embedding, displays the mask and confidence score, and the user adds
+                corrective prompts until the segmentation is correct and confidence saturates near 1.
+              </p>
+            </div>
+          </div>
+          <div class="workflow-step">
+            <span class="step-number">3</span>
+            <div>
+              <h4>Save and proceed</h4>
+              <p>
+                Once satisfied, the user clicks "Save and Render." Point prompts and masks are written
+                to JSON and image files. SamBox advances to the next image in the batch.
+              </p>
+            </div>
+          </div>
+          <div class="workflow-step">
+            <span class="step-number">4</span>
+            <div>
+              <h4>Train SamIC</h4>
+              <p>
+                Saved point prompts are converted into 2D Gaussian heat maps and used as supervision
+                signal. SamIC learns to predict analogous heat maps on unseen target images, from which
+                peak-detection extracts the prompts sent to SAM at inference time.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <h3>Why Confidence Saturation Matters</h3>
+        <p>
+          SAM's image encoder clusters features by color, texture, and part-level appearance. A single
+          point prompt often segments only one part of an object (e.g., text on a can rather than the
+          whole can). SamBox embeds this insight: as users add prompts covering multiple part-level
+          clusters, the confidence score rises until it saturates — signaling that the prompt set is
+          unambiguous and provides a strong learning signal for SamIC.
+        </p>
+
+        <div class="highlight card">
+          <h3>Annotation Speed</h3>
+          <p>
+            Compared to manual pixel-wise annotation with LabelMe, SamBox delivers substantial speedups
+            that scale with GPU capability:
+          </p>
+          <div class="speed-grid">
+            <div class="speed-item">
+              <span class="speed-value">~7×</span>
+              <span class="speed-label">NVIDIA RTX 2070</span>
+            </div>
+            <div class="speed-item">
+              <span class="speed-value">~15×</span>
+              <span class="speed-label">NVIDIA RTX 2080 Ti</span>
+            </div>
+            <div class="speed-item">
+              <span class="speed-value">~18×</span>
+              <span class="speed-label">NVIDIA A100</span>
+            </div>
+          </div>
+          <p>
+            A typical image can be annotated in under 60 seconds on an RTX 2080 Ti. Because SamIC
+            needs only a few labeled images per class, these speedups make it practical to bootstrap
+            a new segmentation task in minutes rather than hours.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <section id="videos" class="section section-alt">
+      <div class="container">
+        <h2>Annotation Speed: LabelMe vs. SamBox</h2>
+        <p class="section-lead narrow">
+          Side-by-side demonstrations of the same annotation task. LabelMe requires painstaking
+          pixel-wise polygon tracing; SamBox produces the same mask with a handful of point prompts.
+        </p>
+
+        <div class="video-grid">
+          <article class="video-card card">
+            <video class="demo-video" controls playsinline preload="metadata">
+              <source src="assets/videos/before_sambox.mp4" type="video/mp4">
+              Your browser does not support the video tag.
+            </video>
+            <h3>Before: LabelMe</h3>
+            <p>
+              Classic polygon-based annotation in LabelMe — manually tracing object boundaries
+              pixel by pixel. Even a single image takes considerable time.
+            </p>
+          </article>
+
+          <article class="video-card card">
+            <video class="demo-video" controls playsinline preload="metadata">
+              <source src="assets/videos/after_sambox.mp4" type="video/mp4">
+              Your browser does not support the video tag.
+            </video>
+            <h3>After: SamBox</h3>
+            <p>
+              The same object annotated with SamBox — a few spatial point prompts and SAM produces
+              the mask in seconds.
+            </p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section id="results" class="section">
+      <div class="container">
+        <h2>Qualitative Results</h2>
+        <p class="section-lead narrow">
+          SamIC across diverse downstream segmentation tasks. Flip through the deck — use arrows,
+          dots, keyboard (← →), or swipe on mobile.
+        </p>
+
+        <div class="flashcard-deck" id="results-deck" aria-label="SamIC results gallery" tabindex="0">
+          <div class="flashcard-stack" id="flashcard-stack">
+            <article class="flashcard" data-index="0">
+              <div class="flashcard-inner">
+                <div class="flashcard-media">
+                  <video class="flashcard-video" controls playsinline preload="metadata">
+                    <source src="assets/videos/results1.mp4" type="video/mp4">
+                  </video>
+                </div>
+                <footer class="flashcard-footer">
+                  <span class="flashcard-title">Result 1</span>
+                  <span class="flashcard-type">Video</span>
+                </footer>
+              </div>
+            </article>
+            <article class="flashcard" data-index="1">
+              <div class="flashcard-inner">
+                <div class="flashcard-media">
+                  <video class="flashcard-video" controls playsinline preload="metadata">
+                    <source src="assets/videos/results2.mp4" type="video/mp4">
+                  </video>
+                </div>
+                <footer class="flashcard-footer">
+                  <span class="flashcard-title">Result 2</span>
+                  <span class="flashcard-type">Video</span>
+                </footer>
+              </div>
+            </article>
+            <article class="flashcard" data-index="2">
+              <div class="flashcard-inner">
+                <div class="flashcard-media">
+                  <video class="flashcard-video" controls playsinline preload="metadata">
+                    <source src="assets/videos/results3.mp4" type="video/mp4">
+                  </video>
+                </div>
+                <footer class="flashcard-footer">
+                  <span class="flashcard-title">Result 3</span>
+                  <span class="flashcard-type">Video</span>
+                </footer>
+              </div>
+            </article>
+            <article class="flashcard" data-index="3">
+              <div class="flashcard-inner">
+                <div class="flashcard-media">
+                  <video class="flashcard-video" controls playsinline preload="metadata">
+                    <source src="assets/videos/results4.mp4" type="video/mp4">
+                  </video>
+                </div>
+                <footer class="flashcard-footer">
+                  <span class="flashcard-title">Result 4</span>
+                  <span class="flashcard-type">Video</span>
+                </footer>
+              </div>
+            </article>
+            <article class="flashcard" data-index="4">
+              <div class="flashcard-inner">
+                <div class="flashcard-media">
+                  <video class="flashcard-video" controls playsinline preload="metadata">
+                    <source src="assets/videos/results5.mp4" type="video/mp4">
+                  </video>
+                </div>
+                <footer class="flashcard-footer">
+                  <span class="flashcard-title">Result 5</span>
+                  <span class="flashcard-type">Video</span>
+                </footer>
+              </div>
+            </article>
+            <article class="flashcard" data-index="5">
+              <div class="flashcard-inner">
+                <div class="flashcard-media">
+                  <video class="flashcard-video" controls playsinline preload="metadata">
+                    <source src="assets/videos/results6.mp4" type="video/mp4">
+                  </video>
+                </div>
+                <footer class="flashcard-footer">
+                  <span class="flashcard-title">Result 6</span>
+                  <span class="flashcard-type">Video</span>
+                </footer>
+              </div>
+            </article>
+            <article class="flashcard" data-index="6">
+              <div class="flashcard-inner">
+                <div class="flashcard-media">
+                  <video class="flashcard-video" controls playsinline preload="metadata">
+                    <source src="assets/videos/results7.mp4" type="video/mp4">
+                  </video>
+                </div>
+                <footer class="flashcard-footer">
+                  <span class="flashcard-title">Result 7</span>
+                  <span class="flashcard-type">Video</span>
+                </footer>
+              </div>
+            </article>
+            <article class="flashcard" data-index="7">
+              <div class="flashcard-inner">
+                <div class="flashcard-media">
+                  <img src="assets/images/results8.jpg" alt="SamIC qualitative result 8" loading="lazy">
+                </div>
+                <footer class="flashcard-footer">
+                  <span class="flashcard-title">Result 8</span>
+                  <span class="flashcard-type">Image</span>
+                </footer>
+              </div>
+            </article>
+            <article class="flashcard" data-index="8">
+              <div class="flashcard-inner">
+                <div class="flashcard-media">
+                  <img src="assets/images/results9.jpg" alt="SamIC qualitative result 9" loading="lazy">
+                </div>
+                <footer class="flashcard-footer">
+                  <span class="flashcard-title">Result 9</span>
+                  <span class="flashcard-type">Image</span>
+                </footer>
+              </div>
+            </article>
+          </div>
+
+          <div class="flashcard-controls">
+            <button type="button" class="flashcard-btn" id="flashcard-prev" aria-label="Previous result">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>
+            </button>
+            <span class="flashcard-counter" id="flashcard-counter">1 / 9</span>
+            <button type="button" class="flashcard-btn" id="flashcard-next" aria-label="Next result">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg>
+            </button>
+          </div>
+
+          <div class="flashcard-dots" id="flashcard-dots" role="tablist" aria-label="Select result"></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="citation" class="section section-alt">
+      <div class="container narrow">
+        <h2>Citation</h2>
+        <p>If you find SamIC or SamBox useful in your research, please cite:</p>
+        <pre class="bibtex"><code>@article{nagendra2024samic,
+  title={SamIC: Segment Anything with In-Context Spatial Prompt Engineering},
+  author={Nagendra, Savinay and Rashid, Kashif and Shen, Chaopeng and Kifer, Daniel},
+  journal={arXiv preprint arXiv:2412.11998},
+  year={2024}
+}</code></pre>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container footer-inner">
+      <p>&copy; 2024 Savinay Nagendra et al. · <a href="https://arxiv.org/abs/2412.11998" target="_blank" rel="noopener noreferrer">arXiv:2412.11998</a></p>
+    </div>
+  </footer>
+  <script src="results.js"></script>
+</body>
+</html>

@@ -32,7 +32,10 @@
     cards.forEach(function (card, i) {
       const video = card.querySelector('video');
       if (!video) return;
+      video.loop = true;
+      video.muted = true;
       if (i === activeIndex) {
+        video.currentTime = 0;
         video.play().catch(function () {});
       } else {
         video.pause();
